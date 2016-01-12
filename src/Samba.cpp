@@ -135,10 +135,20 @@ Samba::init()
         if (_debug)
             printf("Unsupported ARM920T architecture\n");
     }
+    // Check for SAM4S
+    else if (eproc == 7)
+    {
+        // Check for SAM4SA
+        if (arch == 136)
+            return true;
+        if (_debug)
+            printf("Unsupported SAM4S architecture\n");
+    }
+
     else
     {
         if (_debug)
-            printf("Unsupported processor\n");
+            printf("Unsupported processor (eproc=%d, arch=%d)\n", eproc, arch);
     }
 
     return false;

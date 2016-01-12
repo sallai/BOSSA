@@ -3,7 +3,8 @@
 # 
 # Version
 #
-VERSION=1.2.1
+VERSION=1.3a
+WXVERSION=2.8
 
 #
 # Source files
@@ -13,7 +14,7 @@ APPLET_SRCS=WordCopyArm.asm
 BOSSA_SRCS=BossaForm.cpp BossaWindow.cpp BossaAbout.cpp BossaApp.cpp BossaBitmaps.cpp BossaInfo.cpp BossaThread.cpp BossaProgress.cpp
 BOSSA_BMPS=BossaLogo.bmp BossaIcon.bmp ShumaTechLogo.bmp
 BOSSAC_SRCS=bossac.cpp CmdOpts.cpp
-BOSSASH_SRCS=bossash.cpp Shell.cpp Command.cpp
+BOSSASH_SRCS=bossash.cpp Shell.cpp Command.cpp arm-dis/arm-dis.cpp arm-dis/floatformat.cpp
 
 #
 # Build directories
@@ -27,16 +28,17 @@ INSTALLDIR=install
 #
 # Determine OS
 #
-OS:=$(shell uname -s)
+OS:=$(shell uname -s | cut -c -7)
 
 #
 # Windows rules
 #
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),MINGW32)
 EXE=.exe
 COMMON_SRCS+=WinSerialPort.cpp WinPortFactory.cpp
 COMMON_LDFLAGS=-Wl,--enable-auto-import -static -static-libstdc++ -static-libgcc
-COMMON_LIBS=-Wl,--as-needed -lsetupapi -ltermcap
+COMMON_LIBS=-Wl,--as-needed -lsetupapi -lncurses
+
 BOSSA_RC=BossaRes.rc
 WIXDIR="C:\Program Files (x86)\Windows Installer XML v3.5\bin"
 
@@ -141,11 +143,11 @@ ARMOBJCOPY=$(ARM)objcopy
 #
 # CXX Flags
 #
-COMMON_CXXFLAGS+=-Wall -Werror -MT $@ -MD -MP -MF $(@:%.o=%.d) -DVERSION=\"$(VERSION)\" -g -O2
-WX_CXXFLAGS:=$(shell wx-config --cxxflags) -DWX_PRECOMP -Wno-ctor-dtor-privacy -O2 -fno-strict-aliasing
+COMMON_CXXFLAGS+=-D__WIN32__ -Wall -Werror -MT $@ -MD -MP -MF $(@:%.o=%.d) -DVERSION=\"$(VERSION)\" -g -O2
+WX_CXXFLAGS:=$(shell wx-config --cxxflags --version=$(WXVERSION)) -DWX_PRECOMP -Wno-ctor-dtor-privacy -O2 -fno-strict-aliasing
 BOSSA_CXXFLAGS=$(COMMON_CXXFLAGS) $(WX_CXXFLAGS) 
 BOSSAC_CXXFLAGS=$(COMMON_CXXFLAGS)
-BOSSASH_CXXFLAGS=$(COMMON_CXXFLAGS)
+BOSSASH_CXXFLAGS=$(COMMON_CXXFLAGS) -Isrc/arm-dis
 
 #
 # LD Flags
@@ -159,7 +161,7 @@ BOSSASH_LDFLAGS=$(COMMON_LDFLAGS)
 # Libs
 #
 COMMON_LIBS+=
-WX_LIBS:=$(shell wx-config --libs) $(WX_LIBS)
+WX_LIBS:=$(shell wx-config --libs --version=$(WXVERSION)) $(WX_LIBS)
 BOSSA_LIBS=$(COMMON_LIBS) $(WX_LIBS)
 BOSSAC_LIBS=$(COMMON_LIBS)
 BOSSASH_LIBS=-lreadline $(COMMON_LIBS)
@@ -167,8 +169,7 @@ BOSSASH_LIBS=-lreadline $(COMMON_LIBS)
 #
 # Main targets
 #
-all: $(BINDIR)/bossa$(EXE) $(BINDIR)/bossac$(EXE) $(BINDIR)/bossash$(EXE)
-
+all: $(BINDIR)/bossac$(EXE)
 #
 # Common rules
 #
@@ -207,10 +208,10 @@ $(foreach src,$(BOSSA_SRCS),$(eval $(call bossa_obj,$(src))))
 #
 # Resource rules
 #
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),MINGW32)
 $(OBJDIR)/$(BOSSA_RC:%.rc=%.o): $(RESDIR)/$(BOSSA_RC)
 	@echo RC $<
-	$(Q)`wx-config --rescomp` -o $@ $<
+	$(Q)`wx-config --rescomp --version=$(WXVERSION)` -o $@ $<
 endif
 
 #
@@ -249,6 +250,9 @@ $(foreach bmp,$(BOSSA_BMPS),$(eval $(call bossa_bmp,$(bmp))))
 $(OBJDIR):
 	@mkdir $@
     
+$(OBJDIR)/arm-dis:
+	@mkdir $@
+    
 $(BINDIR):
 	@mkdir $@
 
@@ -265,7 +269,7 @@ $(BINDIR)/bossac$(EXE): $(BOSSAC_OBJS) | $(BINDIR)
 	@echo LD $@
 	$(Q)$(CXX) $(BOSSAC_LDFLAGS) -o $@ $(BOSSAC_OBJS) $(BOSSAC_LIBS)
 
-$(BOSSASH_OBJS): | $(OBJDIR)
+$(BOSSASH_OBJS): | $(OBJDIR) $(OBJDIR)/arm-dis
 $(BINDIR)/bossash$(EXE): $(BOSSASH_OBJS) | $(BINDIR)
 	@echo LD $@
 	$(Q)$(CXX) $(BOSSASH_LDFLAGS) -o $@ $(BOSSASH_OBJS) $(BOSSASH_LIBS)
