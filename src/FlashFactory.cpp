@@ -119,7 +119,7 @@ FlashFactory::create(Samba& samba, uint32_t chipId)
         flash = new EefcFlash(samba, "ATSAM4S8", 0x400000, 1024, 512, 1, 64, 0x20001000, 0x20020000, 0x400e0a00, false);
         break;
     case 0x288b09e0 : // A
-        flash = new EefcFlash(samba, "ATSAM4S4A", 0x400000, 1024, 256, 1    , 32        , 0x20001000, 0x20020000, 0x400e0a00, false);
+        flash = new EefcFlash(samba, "ATSAM4S4A", 0x400000, 512, 512, 1    , 32        , 0x20001000, 0x20020000, 0x400e0a00, false);
         break;
 
     //
