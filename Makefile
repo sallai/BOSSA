@@ -28,12 +28,12 @@ INSTALLDIR=install
 #
 # Determine OS
 #
-OS:=$(shell uname -s | cut -c -7)
+OS:=$(shell uname -o)
 
 #
 # Windows rules
 #
-ifeq ($(OS),MINGW32)
+ifeq ($(OS),Cygwin)
 EXE=.exe
 COMMON_SRCS+=WinSerialPort.cpp WinPortFactory.cpp
 COMMON_LDFLAGS=-Wl,--enable-auto-import -static -static-libstdc++ -static-libgcc
